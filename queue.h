@@ -1,44 +1,57 @@
 #include "segel.h"
 
+/*********************************************
+ * Node declaration
+ ********************************************/
 
-typedef struct {
+typedef struct Node_t {
    unsigned int val;
+   struct Node_t * next;
+   struct Node_t * previous;
+} Node;
 
-   Node * next;
-   Node * previous;
-}Node;
+Node *create_node(unsigned int val);
 
+void *destroy_node(Node *node);
+
+unsigned int get_node_value(Node *node);
+
+/*********************************************
+ * List declaration
+ ********************************************/
 
 typedef struct {
     unsigned int size;
     Node * head;
     Node * tail;
-}List;
+} List;
+
+List *create_list();
+
+void *destroy_list(List * list);
+
+void add_node (List *list , unsigned int val);
+
+void remove_node (List *list, unsigned int val);
+
+/*********************************************
+ * Queue declaration
+ ********************************************/
 
 typedef struct {
     List * requests;
-    int queue_size;
+    unsigned int queue_size; // total number of requests allowed
     sem_t  *mutex;
-    sem_t  *items; //current running
-    sem_t  *spaces; //
+    sem_t  *items; // running requests
+    sem_t  *spaces; // spaces for more requests
 } Queue;
 
-Queue *make_queue(unsigned int queue_size)
-{
-    Queue *queue = (Queue *) malloc(sizeof(Queue));
-    queue->queue_size = queue_size;
-    if(sem_init(queue->mutex , 0 , 1)==-1) return NULL;//TODO error handling
-    if(sem_init(queue->items , 0 , 0)==-1)return NULL;
-    if(sem_init(queue->spaces , 0 , queue_size-1)==-1)return NULL;
-    return queue;
-}
+Queue *create_queue(unsigned int queue_size);
 
-void queue_destroy(Queue * queue ){
-    sem_destroy(queue->spaces);
-    sem_destroy(queue->items);
-    sem_destroy(queue->mutex);
-}
+void queue_destroy(Queue * queue );
+
 void queue_pop(Queue * queue);
+
 void queue_push(Queue * queue , Node * item);
 
 

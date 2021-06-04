@@ -3,4 +3,4 @@ project(OS234123_HW3)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable( OS234123-HW3 segel.c  segel.h  server.c  request.c  request.h  output.c  client.c  queue.h )
+add_executable( OS234123-HW3 segel.c  segel.h  server.c  request.c  request.h  output.c  client.c  queue.h queue.c worker_thread.c worker_thread.h)
