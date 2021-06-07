@@ -13,6 +13,8 @@
 // Most of the work is done within routines written in request.c
 //
 
+pthread_mutex_t server_respond_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 // HW3: Parse the new arguments too
 void getargs(int *port,int *num_of_threads,int *queue_size ,char **schedalg, int argc, char *argv[])
 {
@@ -44,11 +46,16 @@ typedef struct {
 
 void server_respond(ServerInfo *server_info, RequestInfo *request_info) {
     char buf[MAXLINE];
-    sprintf(buf, "Stat-Req-Arrival:: %lu.%06lu\r\n\r\n", (unsigned long) request_info->arrival_time, (unsigned long) request_info->arrival_time);
-    sprintf(buf, "Stat-Req-Dispatch:: %lu.%06lu\r\n\r\n", (unsigned long) request_info->dispatch_time, (unsigned long) request_info->dispatch_time);
+    sprintf(buf, "Stat-Req-Arrival:: %lu.%06lu\r\n\r\n", (unsigned long) request_info->arrival_time.tv_sec, (unsigned long) request_info->arrival_time.tv_usec);
+    Rio_writen(request_info->fd, buf, strlen(buf));
+    sprintf(buf, "Stat-Req-Dispatch:: %lu.%06lu\r\n\r\n", (unsigned long) request_info->dispatch_time.tv_sec, (unsigned long) request_info->dispatch_time.tv_usec);
+    Rio_writen(request_info->fd, buf, strlen(buf));
     sprintf(buf, "Stat-Thread-Id:: %d\r\n\r\n\r\n", server_info->thread_id);
+    Rio_writen(request_info->fd, buf, strlen(buf));
     sprintf(buf, "Stat-Thread-Count:: %d\r\n\r\n", server_info->thread_pool[server_info->thread_id]->requests_count);
+    Rio_writen(request_info->fd, buf, strlen(buf));
     sprintf(buf, "Stat-Thread-Static:: %d\r\n\r\n", server_info->thread_pool[server_info->thread_id]->static_requests_count);
+    Rio_writen(request_info->fd, buf, strlen(buf));
     sprintf(buf, "Stat-Thread-Dynamic:: %d\r\n\r\n", server_info->thread_pool[server_info->thread_id]->dynamic_requests_count);
     Rio_writen(request_info->fd, buf, strlen(buf));
     Close(request_info->fd);
@@ -57,14 +64,19 @@ void server_respond(ServerInfo *server_info, RequestInfo *request_info) {
 void check_for_requests(ServerInfo *server_info) {
     while (1) {
         RequestInfo *request_info = queue_pop(server_info->requests_queue);
-        request_info->dispatch_time = Time_GetMiliSeconds() - request_info->arrival_time;
+        struct timeval current_time;
+        gettimeofday(&current_time,NULL);
+        request_info->dispatch_time.tv_usec = current_time.tv_usec - request_info->arrival_time.tv_usec;
+        request_info->dispatch_time.tv_sec = current_time.tv_sec - request_info->arrival_time.tv_sec;
         requestHandle(request_info);
         server_info->thread_pool[server_info->thread_id]->requests_count++;
         if (request_info->is_static_request != -1) {
             request_info->is_static_request ? server_info->thread_pool[server_info->thread_id]->static_requests_count++:
             server_info->thread_pool[server_info->thread_id]->dynamic_requests_count++;
         }
+        pthread_mutex_lock(&server_respond_mutex);
         server_respond(server_info, request_info);
+        pthread_mutex_unlock(&server_respond_mutex);
         destroy_info(request_info);
     }
 }
@@ -100,7 +112,8 @@ int main(int argc, char *argv[])
 
 	    clientlen = sizeof(clientaddr);
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
-	    double arrival_time = Time_GetMiliSeconds();
+        struct timeval *arrival_time = (struct timeval *) malloc(sizeof (struct timeval));
+        gettimeofday(arrival_time,NULL);
         queue_push(requests_queue, connfd, arrival_time);
 
 	// 

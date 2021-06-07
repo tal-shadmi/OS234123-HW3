@@ -23,6 +23,8 @@
 
 #include "segel.h"
 
+pthread_mutex_t client_respond_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * Send an HTTP request for the specified file 
  */
@@ -71,28 +73,46 @@ void clientPrint(int fd)
   }
 }
 
+typedef struct {
+    char *host, *filename;
+    int port;
+} infoToThread;
+
+void thread_client_routine(infoToThread *t) {
+    int clientfd;
+    clientfd = Open_clientfd(t->host, t->port);
+
+    clientSend(clientfd, t->filename);
+    pthread_mutex_lock(&client_respond_mutex);
+    clientPrint(clientfd);
+    pthread_mutex_unlock(&client_respond_mutex);
+    Close(clientfd);
+
+}
+
 int main(int argc, char *argv[])
 {
-  char *host, *filename;
-  int port;
-  int clientfd;
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s <host> <port> <filename>\n", argv[0]);
+        exit(1);
+    }
+    infoToThread *t = (infoToThread *) malloc(sizeof (infoToThread));
+    t->host = strdup(argv[1]);
+    t->port = atoi(argv[2]);
+    t->filename = strdup(argv[3]);
 
-  if (argc != 4) {
-    fprintf(stderr, "Usage: %s <host> <port> <filename>\n", argv[0]);
-    exit(1);
-  }
+    pthread_t threads[10];
+    for (int i = 0 ; i < 10 ; i++) {
+        if (pthread_create(&threads[i], NULL, (void *)thread_client_routine,(void *)t )) {
+            printf("error");
+        }
+    }
+    for (int i = 0 ; i < 10 ; i++) {
+        if (pthread_join(threads[i], NULL)) {
+            printf("error");
+        }
+    }
+    exit(0);
+    /* Open a single connection to the specified host and port */
 
-  host = argv[1];
-  port = atoi(argv[2]);
-  filename = argv[3];
-
-  /* Open a single connection to the specified host and port */
-  clientfd = Open_clientfd(host, port);
-  
-  clientSend(clientfd, filename);
-  clientPrint(clientfd);
-    
-  Close(clientfd);
-
-  exit(0);
 }

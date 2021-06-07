@@ -9,12 +9,12 @@
 
 typedef struct {
     int fd;
-    double arrival_time;
-    double dispatch_time;
+    struct timeval arrival_time;
+    struct timeval dispatch_time;
     int is_static_request;
 } RequestInfo;
 
-RequestInfo *create_info(int fd, double arrival_time);
+RequestInfo *create_info(int fd, struct timeval *arrival_time);
 
 void destroy_info();
 
@@ -28,7 +28,7 @@ typedef struct Node_t {
    struct Node_t * previous;
 } Node;
 
-Node *create_node(int fd, double arrival_time);
+Node *create_node(int fd, struct timeval *arrival_time);
 
 void destroy_node(Node *node);
 
@@ -46,9 +46,9 @@ List *create_list();
 
 void *destroy_list(List * list);
 
-void add_node (List *list , int fd, double arrival_time);
+void add_node (List *list , int fd, struct timeval *arrival_time);
 
-void remove_node (List *list, int fd, double arrival_time);
+void remove_node (List *list, int fd, struct timeval *arrival_time);
 
 void remove_tail(List *list);
 
@@ -72,6 +72,6 @@ void queue_destroy(Queue * queue);
 
 RequestInfo *queue_pop(Queue * queue);
 
-void queue_push(Queue * queue , int fd, double arrival_time);
+void queue_push(Queue * queue , int fd, struct timeval *arrival_time);
 
 #endif

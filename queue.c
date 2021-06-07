@@ -4,11 +4,11 @@
  * RequestInfo implementation
  ********************************************/
 
-RequestInfo *create_info(int fd, double arrival_time) {
+RequestInfo *create_info(int fd, struct timeval *arrival_time) {
     RequestInfo *info = (RequestInfo *) malloc(sizeof (RequestInfo));
     info->fd = fd;
-    info->arrival_time = arrival_time;
-    info->dispatch_time = -1;
+    info->arrival_time.tv_usec = arrival_time->tv_usec;
+    info->arrival_time.tv_sec = arrival_time->tv_sec;
     info->is_static_request = -1;
 }
 
@@ -20,7 +20,7 @@ void destroy_info(RequestInfo *info) {
  * Node implementation
  ********************************************/
 
-Node *create_node(int fd, double arrival_time) {
+Node *create_node(int fd, struct timeval *arrival_time) {
     Node *node = (Node *) malloc((sizeof (Node)));
     if (node == NULL) return NULL; //TODO: error handling
     node->info = create_info(fd, arrival_time);
@@ -57,7 +57,7 @@ void *destroy_list(List * list) {
     free(list);
 }
 
-void add_node (List *list , int fd, double arrival_time) {
+void add_node (List *list , int fd, struct timeval *arrival_time) {
     if (list == NULL) return;
     Node* new_node = create_node(fd, arrival_time);
     if (new_node == NULL) return;
@@ -72,10 +72,11 @@ void add_node (List *list , int fd, double arrival_time) {
     }
 }
 
-void remove_node (List *list, int fd, double arrival_time) {
+void remove_node (List *list, int fd, struct timeval *arrival_time) {
     Node *current_node = list->head;
     while (current_node != NULL) {
-        if (current_node->info->fd == fd && current_node->info->arrival_time == arrival_time) {
+        if (current_node->info->fd == fd && current_node->info->arrival_time.tv_sec == arrival_time->tv_sec &&
+                current_node->info->arrival_time.tv_usec == arrival_time->tv_usec) {
             current_node->previous->next = current_node->next;
             current_node->next->previous = current_node->previous;
             destroy_node(current_node);
@@ -98,9 +99,9 @@ void remove_tail(List *list) {
 }
 
 void remove_head(List *list) {
-    Node *new_head_save = list->head->next;
+    Node *new_head_save = list->head->previous;
     if (new_head_save != NULL) {
-        new_head_save->previous = NULL;
+        new_head_save->next = NULL;
     }
     else {
         list->tail = NULL;
@@ -142,7 +143,6 @@ RequestInfo *queue_pop(Queue * queue) {
     RequestInfo *info = (RequestInfo *) malloc(sizeof (RequestInfo));
     info->fd = queue->requests->head->info->fd;
     info->arrival_time = queue->requests->head->info->arrival_time;
-    info->dispatch_time =  -1;
     remove_head(queue->requests);
     queue->requests->size--;
     pthread_cond_signal(&queue->condition);
@@ -152,7 +152,7 @@ RequestInfo *queue_pop(Queue * queue) {
     return info;
 }
 
-void queue_push(Queue * queue , int fd , double arrival_time){
+void queue_push(Queue * queue , int fd , struct timeval *arrival_time){
 
     pthread_mutex_lock(&queue->mutex);
 
@@ -168,10 +168,11 @@ void queue_push(Queue * queue , int fd , double arrival_time){
 
         else if (!strcmp(queue->overload_policy,"dt")) {
             Close(fd);
+            pthread_cond_signal(&queue->condition);
         }
 
         else if (!strcmp(queue->overload_policy,"dh")) {
-            Close(list->head->info->fd);
+            Close(queue->requests->head->info->fd);
             remove_head(queue->requests);
             add_node(queue->requests, fd, arrival_time);
             pthread_cond_signal(&queue->condition);
