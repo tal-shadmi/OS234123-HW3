@@ -1,7 +1,7 @@
-#include "segel.h"
-
 #ifndef OS234123_HW3_WORKER_THREAD_H
 #define OS234123_HW3_WORKER_THREAD_H
+
+#include "segel.h"
 
 typedef struct {
   pthread_t thread;

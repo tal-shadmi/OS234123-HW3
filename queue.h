@@ -1,3 +1,6 @@
+#ifndef __QUEUE_H__
+#define __QUEUE_H__
+
 #include "segel.h"
 
 /*********************************************
@@ -61,9 +64,6 @@ typedef struct {
     pthread_mutex_t mutex;
     pthread_cond_t condition;
     char *overload_policy;
-//    sem_t  *mutex;
-//    sem_t  *items; // running requests
-//    sem_t  *spaces; // spaces for more requests
 } Queue;
 
 Queue *create_queue(int queue_size, char *schedalg);
@@ -73,3 +73,5 @@ void queue_destroy(Queue * queue);
 RequestInfo *queue_pop(Queue * queue);
 
 void queue_push(Queue * queue , int fd, double arrival_time);
+
+#endif
