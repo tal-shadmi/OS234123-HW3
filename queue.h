@@ -47,15 +47,16 @@ typedef struct {
     int queue_size; // total number of requests allowed
     pthread_mutex_t mutex;
     pthread_cond_t condition;
+    char *overload_policy;
 //    sem_t  *mutex;
 //    sem_t  *items; // running requests
 //    sem_t  *spaces; // spaces for more requests
 } Queue;
 
-Queue *create_queue(int queue_size);
+Queue *create_queue(int queue_size, char *schedalg);
 
 void queue_destroy(Queue * queue);
 
 int queue_pop(Queue * queue);
 
-void queue_push(Queue * queue , int fd, char *schedalg);
+void queue_push(Queue * queue , int fd);

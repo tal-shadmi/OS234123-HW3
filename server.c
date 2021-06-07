@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 
 	    clientlen = sizeof(clientaddr);
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
-        queue_push(requests_queue, connfd, schedalg);
+        queue_push(requests_queue, connfd);
 
 	// 
 	// HW3: In general, don't handle these requests in the main thread.

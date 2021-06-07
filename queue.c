@@ -90,12 +90,13 @@ void remove_head(List *list) {
  * Queue implementation
  ********************************************/
 
-Queue *create_queue(int queue_size) {
+Queue *create_queue(int queue_size, char *schedalg) {
     Queue *queue = (Queue *) malloc(sizeof(Queue));
     queue->requests = create_list();
     queue->queue_size = queue_size;
     pthread_mutex_init(&queue->mutex, NULL);
     pthread_cond_init(&queue->condition, NULL);
+    strcpy(queue->overload_policy, schedalg);
 //    if(sem_init(queue->mutex , 0 , 1) == -1) return NULL; //TODO: error handling
 //    if(sem_init(queue->items , 0 , 0) == -1) return NULL; //TODO: error handling
 //    if(sem_init(queue->spaces , 0 , queue_size-1) == -1) return NULL; //TODO: error handling
@@ -109,6 +110,7 @@ void queue_destroy(Queue * queue ) {
     pthread_cond_destroy(&queue->condition);
     pthread_mutex_destroy(&queue->mutex);
     free(queue->requests);
+    free(queue->overload_policy);
     free(queue);
 }
 
@@ -139,27 +141,34 @@ int queue_pop(Queue * queue) {
     return fd;
 }
 
-void queue_push(Queue * queue , int fd, char *schedalg){
+void queue_push(Queue * queue , int fd){
 //    sem_wait(queue->spaces);
 //    sem_wait(queue->mutex);
     pthread_mutex_lock(&queue->mutex);
 
-    if (!strcmp(schedalg,"block")) {
-        while (queue->requests->size > queue->queue_size) {
-            pthread_cond_wait(&queue->condition, &queue->mutex);
+    if (queue->requests->size > queue->queue_size) {
+        if (!strcmp(queue->overload_policy,"block")) {
+            while (queue->requests->size > queue->queue_size) {
+                pthread_cond_wait(&queue->condition, &queue->mutex);
+            }
+            add_node(queue->requests, fd);
+            queue->requests->size++;
+            pthread_cond_signal(&queue->condition);
         }
+
+        else if (!strcmp(queue->overload_policy,"dt")) {
+            Close(fd);
+        }
+
+        else if (!strcmp(queue->overload_policy,"dh")) {
+            remove_head(queue->requests);
+            add_node(queue->requests, fd);
+            pthread_cond_signal(&queue->condition);
+        }
+    }
+    else {
         add_node(queue->requests, fd);
         queue->requests->size++;
-        pthread_cond_signal(&queue->condition);
-    }
-
-    else if (!strcmp(schedalg,"dt")) {
-        Close(fd);
-    }
-
-    else if (!strcmp(schedalg,"dh")) {
-        remove_head(queue->requests);
-        add_node(queue->requests, fd);
         pthread_cond_signal(&queue->condition);
     }
 
