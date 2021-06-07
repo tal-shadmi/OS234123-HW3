@@ -2,6 +2,6 @@
 
 #include "queue.h"
 
-void requestHandle(int fd);
+void requestHandle(RequestInfo *info);
 
 #endif

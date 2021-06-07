@@ -3,7 +3,7 @@
 #ifndef OS234123_HW3_WORKER_THREAD_H
 #define OS234123_HW3_WORKER_THREAD_H
 
-typedef struct worker_thread_t {
+typedef struct {
   pthread_t thread;
   int busy;
 } worker_thread ;

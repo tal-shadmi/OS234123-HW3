@@ -30,15 +30,20 @@ void getargs(int *port,int *num_of_threads,int *queue_size ,char *schedalg, int 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 
-void check_for_requests(Queue *requests_queue) {
+void check_for_requests(ServerInfo *server_info) {
     while (1) {
-        int fd = queue_pop(requests_queue);
-        requestHandle(fd);
-//        if (fd != -1) {
-//            requestHandle(fd);
-//        }
+        RequestInfo *info = queue_pop(server_info->requests_queue);
+        info->dispatch_time = Time_GetMiliSeconds() - info->arrival_time;
+        requestHandle(info);
+        server_info->thread_pool[server_info->thread_id]->requests_count++;
+        if (info->is_static_request != -1) {
+            info->is_static_request ? server_info->thread_pool[server_info->thread_id]->static_requests_count++:
+            server_info->thread_pool[server_info->thread_id]->dynamic_requests_count++;
+        }
+        destroy_info(info);
     }
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -53,12 +58,16 @@ int main(int argc, char *argv[])
     //
 
     worker_thread **threads = worker_thread_create(num_of_threads);
-    Queue *requests_queue = create_queue(queue_size);
+    Queue *requests_queue = create_queue(queue_size, schedalg);
 
     for (int i = 0 ; i < num_of_threads ; i++) {
-            if (pthread_create(&threads[i]->thread, NULL, (void *)check_for_requests, requests_queue)) {
-                printf("error");
-            }
+        ServerInfo *server_info = (ServerInfo *) malloc(sizeof (ServerInfo));
+        server_info->thread_id = i;
+        server_info->thread_pool = threads;
+        server_info->requests_queue = requests_queue;
+        if (pthread_create(&threads[i]->thread, NULL, (void *)check_for_requests, server_info)) {
+            printf("error");
+        }
     }
 
     listenfd = Open_listenfd(port);

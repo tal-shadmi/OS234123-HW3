@@ -1,20 +1,33 @@
 #include "segel.h"
 
 /*********************************************
+ * RequestInfo declaration
+ ********************************************/
+
+typedef struct {
+    int fd;
+    double arrival_time;
+    double dispatch_time;
+    int is_static_request;
+} RequestInfo;
+
+RequestInfo *create_info(int fd, double arrival_time);
+
+void destroy_info();
+
+/*********************************************
  * Node declaration
  ********************************************/
 
 typedef struct Node_t {
-   int val;
+   RequestInfo * info;
    struct Node_t * next;
    struct Node_t * previous;
 } Node;
 
-Node *create_node(int val);
+Node *create_node(int fd, double arrival_time);
 
-void *destroy_node(Node *node);
-
-unsigned int get_node_value(Node *node);
+void destroy_node(Node *node);
 
 /*********************************************
  * List declaration
@@ -30,9 +43,9 @@ List *create_list();
 
 void *destroy_list(List * list);
 
-void add_node (List *list , int val);
+void add_node (List *list , int fd, double arrival_time);
 
-void remove_node (List *list, int val);
+void remove_node (List *list, int fd, double arrival_time);
 
 void remove_tail(List *list);
 
@@ -57,6 +70,6 @@ Queue *create_queue(int queue_size, char *schedalg);
 
 void queue_destroy(Queue * queue);
 
-int queue_pop(Queue * queue);
+RequestInfo *queue_pop(Queue * queue);
 
-void queue_push(Queue * queue , int fd);
+void queue_push(Queue * queue , int fd, double arrival_time);
