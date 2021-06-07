@@ -1,7 +1,6 @@
 #include "segel.h"
 #include "request.h"
 #include "worker_thread.h"
-#include "queue.h"
 
 // 
 // server.c: A very, very simple web server
@@ -30,20 +29,32 @@ void getargs(int *port,int *num_of_threads,int *queue_size ,char *schedalg, int 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 
-void check_for_requests(ServerInfo *server_info) {
-    while (1) {
-        RequestInfo *info = queue_pop(server_info->requests_queue);
-        info->dispatch_time = Time_GetMiliSeconds() - info->arrival_time;
-        requestHandle(info);
-        server_info->thread_pool[server_info->thread_id]->requests_count++;
-        if (info->is_static_request != -1) {
-            info->is_static_request ? server_info->thread_pool[server_info->thread_id]->static_requests_count++:
-            server_info->thread_pool[server_info->thread_id]->dynamic_requests_count++;
-        }
-        destroy_info(info);
-    }
+void server_respond(ServerInfo *server_info, RequestInfo *request_info) {
+    char buf[MAXLINE];
+    sprintf(buf, "Stat-Req-Arrival:: %lu.%06lu\r\n\r\n", (unsigned long) request_info->arrival_time, (unsigned long) request_info->arrival_time);
+    sprintf(buf, "Stat-Req-Dispatch:: %lu.%06lu\r\n\r\n", (unsigned long) request_info->dispatch_time, (unsigned long) request_info->dispatch_time);
+    sprintf(buf, "Stat-Thread-Id:: %d\r\n\r\n\r\n", server_info->thread_id);
+    sprintf(buf, "Stat-Thread-Count:: %d\r\n\r\n", server_info->thread_pool[server_info->thread_id]->requests_count);
+    sprintf(buf, "Stat-Thread-Static:: %d\r\n\r\n", server_info->thread_pool[server_info->thread_id]->static_requests_count);
+    sprintf(buf, "Stat-Thread-Dynamic:: %d\r\n\r\n", server_info->thread_pool[server_info->thread_id]->dynamic_requests_count);
+    Rio_writen(request_info->fd, buf, strlen(buf));
+    Close(request_info->fd);
 }
 
+void check_for_requests(ServerInfo *server_info) {
+    while (1) {
+        RequestInfo *request_info = queue_pop(server_info->requests_queue);
+        request_info->dispatch_time = Time_GetMiliSeconds() - request_info->arrival_time;
+        requestHandle(request_info);
+        server_info->thread_pool[server_info->thread_id]->requests_count++;
+        if (request_info->is_static_request != -1) {
+            request_info->is_static_request ? server_info->thread_pool[server_info->thread_id]->static_requests_count++:
+            server_info->thread_pool[server_info->thread_id]->dynamic_requests_count++;
+        }
+        server_respond(server_info, request_info);
+        destroy_info(request_info);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -83,16 +94,6 @@ int main(int argc, char *argv[])
 	// Save the relevant info in a buffer and have one of the worker threads 
 	// do the work
 	//
-
-//        for (int i = 0 ; i < num_of_threads ; i++) {
-//            if (!threads[i]->busy) {
-//                threads[i]->busy = 1;
-//                if (pthread_create(&threads[i]->thread, NULL, (void *) requestHandle, requests_queue)) {
-//                    printf("error");
-//                }
-//                threads[i]->busy = 0;
-//            }
-//        }
 
     }
 
