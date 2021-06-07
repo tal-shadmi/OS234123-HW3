@@ -78,6 +78,7 @@ void remove_node (List *list, int fd, double arrival_time) {
         if (current_node->info->fd == fd && current_node->info->arrival_time == arrival_time) {
             current_node->previous->next = current_node->next;
             current_node->next->previous = current_node->previous;
+            Close(current_node->info->fd);
             destroy_node(current_node);
             break;
         }
@@ -85,16 +86,30 @@ void remove_node (List *list, int fd, double arrival_time) {
     }
 }
 
+// TODO: need to close fd from the tail node
 void remove_tail(List *list) {
+    Close(list->tail->info->fd);
     Node *new_tail_save = list->tail->previous;
-    new_tail_save->next = NULL;
+    if (new_tail_save != NULL) {
+        new_tail_save->next = NULL;
+    }
+    else {
+        list->head = NULL;
+    }
     destroy_node(list->tail);
     list->tail = new_tail_save;
 }
 
+// TODO: need to close fd from the head node
 void remove_head(List *list) {
+    Close(list->head->info->fd);
     Node *new_head_save = list->head->next;
-    new_head_save->previous = NULL;
+    if (new_head_save != NULL) {
+        new_head_save->previous = NULL;
+    }
+    else {
+        list->tail = NULL;
+    }
     destroy_node(list->head);
     list->head = new_head_save;
 }
@@ -169,7 +184,7 @@ void queue_push(Queue * queue , int fd , double arrival_time){
         }
     }
     else {
-        add_node(queue->requests , fd , arrival_time );
+        add_node(queue->requests , fd, arrival_time);
         queue->requests->size++;
         pthread_cond_signal(&queue->condition);
     }

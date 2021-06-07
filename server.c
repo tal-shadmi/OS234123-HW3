@@ -25,7 +25,6 @@ void getargs(int *port,int *num_of_threads,int *queue_size ,char **schedalg, int
     *queue_size = atoi(argv[3]);
     *schedalg = (char *) malloc(sizeof(char) * strlen(argv[4]) + 1);
     strcpy(*schedalg, argv[4]);
-    fprintf(stdout, "hi");
 }
 
 double Time_GetMiliSeconds() {
@@ -72,7 +71,6 @@ void check_for_requests(ServerInfo *server_info) {
 
 int main(int argc, char *argv[])
 {
-    fprintf(stdout, "hi");
     int listenfd, connfd, port, clientlen , num_of_threads , queue_size;
     char *schedalg;
     struct sockaddr_in clientaddr;
