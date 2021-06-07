@@ -1,6 +1,7 @@
 #include "segel.h"
 #include "request.h"
 #include "worker_thread.h"
+#include "queue.h"
 
 // 
 // server.c: A very, very simple web server
@@ -26,9 +27,19 @@ void getargs(int *port,int *num_of_threads,int *queue_size ,char *schedalg, int 
     strcpy(schedalg, argv[4]);
 }
 
-
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
+
+void check_for_requests(Queue *requests_queue) {
+    while (1) {
+        int fd = queue_pop(requests_queue);
+        requestHandle(fd);
+//        if (fd != -1) {
+//            requestHandle(fd);
+//        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int listenfd, connfd, port, clientlen , num_of_threads , queue_size;
@@ -42,14 +53,21 @@ int main(int argc, char *argv[])
     //
 
     worker_thread **threads = worker_thread_create(num_of_threads);
+    Queue *requests_queue = create_queue(queue_size);
+
+    for (int i = 0 ; i < num_of_threads ; i++) {
+            if (pthread_create(&threads[i]->thread, NULL, (void *)check_for_requests, requests_queue)) {
+                printf("error");
+            }
+    }
 
     listenfd = Open_listenfd(port);
 
     while (1) {
 
-
 	    clientlen = sizeof(clientaddr);
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
+        queue_push(requests_queue, connfd, schedalg);
 
 	// 
 	// HW3: In general, don't handle these requests in the main thread.
@@ -57,16 +75,16 @@ int main(int argc, char *argv[])
 	// do the work
 	//
 
-        for (int i = 0 ; i < num_of_threads ; i++) {
-            if (!threads[i]->busy) {
-                if (pthread_create(&threads[i]->thread, NULL, (void *) requestHandle, (void *) &fd4)) {
-                    printf("error");
-                }
-            }
-        }
+//        for (int i = 0 ; i < num_of_threads ; i++) {
+//            if (!threads[i]->busy) {
+//                threads[i]->busy = 1;
+//                if (pthread_create(&threads[i]->thread, NULL, (void *) requestHandle, requests_queue)) {
+//                    printf("error");
+//                }
+//                threads[i]->busy = 0;
+//            }
+//        }
 
-//	    requestHandle(connfd);
-//	    Close(connfd);
     }
 
 }

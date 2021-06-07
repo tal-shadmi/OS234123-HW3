@@ -5,12 +5,12 @@
  ********************************************/
 
 typedef struct Node_t {
-   unsigned int val;
+   int val;
    struct Node_t * next;
    struct Node_t * previous;
 } Node;
 
-Node *create_node(unsigned int val);
+Node *create_node(int val);
 
 void *destroy_node(Node *node);
 
@@ -21,7 +21,7 @@ unsigned int get_node_value(Node *node);
  ********************************************/
 
 typedef struct {
-    unsigned int size;
+    int size;
     Node * head;
     Node * tail;
 } List;
@@ -30,9 +30,13 @@ List *create_list();
 
 void *destroy_list(List * list);
 
-void add_node (List *list , unsigned int val);
+void add_node (List *list , int val);
 
-void remove_node (List *list, unsigned int val);
+void remove_node (List *list, int val);
+
+void remove_tail(List *list);
+
+void remove_head(List *list);
 
 /*********************************************
  * Queue declaration
@@ -40,18 +44,18 @@ void remove_node (List *list, unsigned int val);
 
 typedef struct {
     List * requests;
-    unsigned int queue_size; // total number of requests allowed
-    sem_t  *mutex;
-    sem_t  *items; // running requests
-    sem_t  *spaces; // spaces for more requests
+    int queue_size; // total number of requests allowed
+    pthread_mutex_t mutex;
+    pthread_cond_t condition;
+//    sem_t  *mutex;
+//    sem_t  *items; // running requests
+//    sem_t  *spaces; // spaces for more requests
 } Queue;
 
-Queue *create_queue(unsigned int queue_size);
+Queue *create_queue(int queue_size);
 
-void queue_destroy(Queue * queue );
+void queue_destroy(Queue * queue);
 
-void queue_pop(Queue * queue);
+int queue_pop(Queue * queue);
 
-void queue_push(Queue * queue , Node * item);
-
-
+void queue_push(Queue * queue , int fd, char *schedalg);
