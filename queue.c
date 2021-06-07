@@ -66,9 +66,9 @@ void add_node (List *list , int fd, double arrival_time) {
         list->tail = new_node;
 
     } else {
-        list->head->previous = new_node;
-        new_node->next = list->head;
-        list->head = new_node;
+        list->tail->previous = new_node;
+        new_node->next = list->tail;
+        list->tail = new_node;
     }
 }
 
@@ -78,7 +78,6 @@ void remove_node (List *list, int fd, double arrival_time) {
         if (current_node->info->fd == fd && current_node->info->arrival_time == arrival_time) {
             current_node->previous->next = current_node->next;
             current_node->next->previous = current_node->previous;
-            Close(current_node->info->fd);
             destroy_node(current_node);
             break;
         }
@@ -86,9 +85,7 @@ void remove_node (List *list, int fd, double arrival_time) {
     }
 }
 
-// TODO: need to close fd from the tail node
 void remove_tail(List *list) {
-    Close(list->tail->info->fd);
     Node *new_tail_save = list->tail->previous;
     if (new_tail_save != NULL) {
         new_tail_save->next = NULL;
@@ -100,9 +97,7 @@ void remove_tail(List *list) {
     list->tail = new_tail_save;
 }
 
-// TODO: need to close fd from the head node
 void remove_head(List *list) {
-    Close(list->head->info->fd);
     Node *new_head_save = list->head->next;
     if (new_head_save != NULL) {
         new_head_save->previous = NULL;
@@ -141,16 +136,14 @@ RequestInfo *queue_pop(Queue * queue) {
 
     pthread_mutex_lock(&queue->mutex);
 
-    // TODO: will need modifications for part 2
-
     while (queue->requests->size == 0) {
         pthread_cond_wait(&queue->condition, &queue->mutex);
     }
     RequestInfo *info = (RequestInfo *) malloc(sizeof (RequestInfo));
-    info->fd = queue->requests->tail->info->fd;
-    info->arrival_time = queue->requests->tail->info->arrival_time;
+    info->fd = queue->requests->head->info->fd;
+    info->arrival_time = queue->requests->head->info->arrival_time;
     info->dispatch_time =  -1;
-    remove_tail(queue->requests);
+    remove_head(queue->requests);
     queue->requests->size--;
     pthread_cond_signal(&queue->condition);
 
@@ -178,6 +171,7 @@ void queue_push(Queue * queue , int fd , double arrival_time){
         }
 
         else if (!strcmp(queue->overload_policy,"dh")) {
+            Close(list->head->info->fd);
             remove_head(queue->requests);
             add_node(queue->requests, fd, arrival_time);
             pthread_cond_signal(&queue->condition);
