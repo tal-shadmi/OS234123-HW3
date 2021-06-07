@@ -26,6 +26,18 @@ void getargs(int *port,int *num_of_threads,int *queue_size ,char *schedalg, int 
     strcpy(schedalg, argv[4]);
 }
 
+double Time_GetMiliSeconds() {
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    return (double) ((double)t.tv_sec + (double)t.tv_usec / 1e6);
+}
+
+typedef struct {
+    Queue *requests_queue;
+    worker_thread **thread_pool;
+    int thread_id;
+} ServerInfo;
+
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 
@@ -87,7 +99,8 @@ int main(int argc, char *argv[])
 
 	    clientlen = sizeof(clientaddr);
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
-        queue_push(requests_queue, connfd);
+	    double arrival_time = Time_GetMiliSeconds();
+        queue_push(requests_queue, connfd, arrival_time);
 
 	// 
 	// HW3: In general, don't handle these requests in the main thread.

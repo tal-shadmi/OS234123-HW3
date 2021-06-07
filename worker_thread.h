@@ -5,8 +5,11 @@
 
 typedef struct {
   pthread_t thread;
-  int busy;
-} worker_thread ;
+  int id;
+  int requests_count;
+  int dynamic_requests_count;
+  int static_requests_count;
+} worker_thread;
 
 worker_thread* worker_thread_create_node();
 

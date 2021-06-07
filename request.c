@@ -173,6 +173,7 @@ void requestHandle(RequestInfo *info)
    requestReadhdrs(&rio);
 
    is_static = requestParseURI(uri, filename, cgiargs);
+   info->is_static_request = is_static;
    if (stat(filename, &sbuf) < 0) {
       requestError(fd, filename, "404", "Not found", "OS-HW3 Server could not find this file");
       return;

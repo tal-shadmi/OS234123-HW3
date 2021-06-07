@@ -143,9 +143,8 @@ RequestInfo *queue_pop(Queue * queue) {
     return info;
 }
 
-void queue_push(Queue * queue , int fd){
-//    sem_wait(queue->spaces);
-//    sem_wait(queue->mutex);
+void queue_push(Queue * queue , int fd , double arrival_time){
+
     pthread_mutex_lock(&queue->mutex);
 
     if (queue->requests->size > queue->queue_size) {
@@ -153,7 +152,7 @@ void queue_push(Queue * queue , int fd){
             while (queue->requests->size > queue->queue_size) {
                 pthread_cond_wait(&queue->condition, &queue->mutex);
             }
-            add_node(queue->requests, fd);
+            add_node(queue->requests, fd , arrival_time);
             queue->requests->size++;
             pthread_cond_signal(&queue->condition);
         }
@@ -164,12 +163,12 @@ void queue_push(Queue * queue , int fd){
 
         else if (!strcmp(queue->overload_policy,"dh")) {
             remove_head(queue->requests);
-            add_node(queue->requests, fd);
+            add_node(queue->requests, fd, arrival_time);
             pthread_cond_signal(&queue->condition);
         }
     }
     else {
-        add_node(queue->requests, fd);
+        add_node(queue->requests , fd , arrival_time );
         queue->requests->size++;
         pthread_cond_signal(&queue->condition);
     }
