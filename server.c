@@ -1,6 +1,7 @@
 #include "segel.h"
 #include "request.h"
 #include "worker_thread.h"
+#include "queue.h"
 
 // 
 // server.c: A very, very simple web server
@@ -22,7 +23,7 @@ void getargs(int *port,int *num_of_threads,int *queue_size ,char *schedalg, int 
     *port = atoi(argv[1]);
     *num_of_threads = atoi(argv[2]);
     *queue_size = atoi(argv[3]);
-    schedalg = (char *) malloc(sizeof(char) * strlen(argv[4]));
+    schedalg = (char *) malloc(sizeof(char) * strlen(argv[4]) + 1);
     strcpy(schedalg, argv[4]);
 }
 

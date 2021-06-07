@@ -109,7 +109,7 @@ Queue *create_queue(int queue_size, char *schedalg) {
     queue->queue_size = queue_size;
     pthread_mutex_init(&queue->mutex, NULL);
     pthread_cond_init(&queue->condition, NULL);
-    strcpy(queue->overload_policy, schedalg);
+    queue->overload_policy = strdup(schedalg);
     return queue;
 }
 
