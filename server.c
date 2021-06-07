@@ -14,7 +14,7 @@
 //
 
 // HW3: Parse the new arguments too
-void getargs(int *port,int *num_of_threads,int *queue_size ,char *schedalg, int argc, char *argv[])
+void getargs(int *port,int *num_of_threads,int *queue_size ,char **schedalg, int argc, char *argv[])
 {
     if (argc < 2) {
 	fprintf(stderr, "Usage: %s <port>\n", argv[0]);
@@ -23,8 +23,9 @@ void getargs(int *port,int *num_of_threads,int *queue_size ,char *schedalg, int 
     *port = atoi(argv[1]);
     *num_of_threads = atoi(argv[2]);
     *queue_size = atoi(argv[3]);
-    schedalg = (char *) malloc(sizeof(char) * strlen(argv[4]) + 1);
-    strcpy(schedalg, argv[4]);
+    *schedalg = (char *) malloc(sizeof(char) * strlen(argv[4]) + 1);
+    strcpy(*schedalg, argv[4]);
+    fprintf(stdout, "hi");
 }
 
 double Time_GetMiliSeconds() {
@@ -71,11 +72,12 @@ void check_for_requests(ServerInfo *server_info) {
 
 int main(int argc, char *argv[])
 {
+    fprintf(stdout, "hi");
     int listenfd, connfd, port, clientlen , num_of_threads , queue_size;
     char *schedalg;
     struct sockaddr_in clientaddr;
 
-    getargs(&port, &num_of_threads, &queue_size, schedalg, argc, argv);
+    getargs(&port, &num_of_threads, &queue_size, &schedalg, argc, argv);
 
     // 
     // HW3: Create some threads...
