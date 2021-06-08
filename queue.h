@@ -48,7 +48,8 @@ void *destroy_list(List * list);
 
 void add_node (List *list , int fd, struct timeval *arrival_time);
 
-void remove_node (List *list, int fd, struct timeval *arrival_time);
+//void remove_node (List *list, int fd, struct timeval *arrival_time);
+void remove_node (List *list, Node * node);
 
 void remove_tail(List *list);
 
@@ -60,7 +61,9 @@ void remove_head(List *list);
 
 typedef struct {
     List * requests;
-    int queue_size; // total number of requests allowed
+    int queue_size; // total number of requests allowed (running + waiting)
+    // added
+    int running_requests;
     pthread_mutex_t mutex;
     pthread_cond_t condition;
     char *overload_policy;

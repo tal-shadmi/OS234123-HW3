@@ -13,7 +13,7 @@
 // Most of the work is done within routines written in request.c
 //
 
-pthread_mutex_t server_respond_mutex = PTHREAD_MUTEX_INITIALIZER;
+// pthread_mutex_t server_respond_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // HW3: Parse the new arguments too
 void getargs(int *port,int *num_of_threads,int *queue_size ,char **schedalg, int argc, char *argv[])
@@ -74,9 +74,11 @@ void check_for_requests(ServerInfo *server_info) {
             request_info->is_static_request ? server_info->thread_pool[server_info->thread_id]->static_requests_count++:
             server_info->thread_pool[server_info->thread_id]->dynamic_requests_count++;
         }
-        pthread_mutex_lock(&server_respond_mutex);
+        pthread_mutex_lock(&server_info->requests_queue->mutex);
+        server_info->requests_queue->running_requests--;
         server_respond(server_info, request_info);
-        pthread_mutex_unlock(&server_respond_mutex);
+        pthread_cond_signal(&server_info->requests_queue->condition);
+        pthread_mutex_unlock(&server_info->requests_queue->mutex);
         destroy_info(request_info);
     }
 }

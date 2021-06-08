@@ -72,18 +72,32 @@ void add_node (List *list , int fd, struct timeval *arrival_time) {
     }
 }
 
-void remove_node (List *list, int fd, struct timeval *arrival_time) {
-    Node *current_node = list->head;
-    while (current_node != NULL) {
-        if (current_node->info->fd == fd && current_node->info->arrival_time.tv_sec == arrival_time->tv_sec &&
-                current_node->info->arrival_time.tv_usec == arrival_time->tv_usec) {
-            current_node->previous->next = current_node->next;
-            current_node->next->previous = current_node->previous;
-            destroy_node(current_node);
-            break;
-        }
-        current_node = current_node->next;
+//void remove_node (List *list, int fd, struct timeval *arrival_time) {
+//    Node *current_node = list->head;
+//    while (current_node != NULL) {
+//        if (current_node->info->fd == fd && current_node->info->arrival_time.tv_sec == arrival_time->tv_sec &&
+//                current_node->info->arrival_time.tv_usec == arrival_time->tv_usec) {
+//            current_node->previous->next = current_node->next;
+//            current_node->next->previous = current_node->previous;
+//            destroy_node(current_node);
+//            break;
+//        }
+//        current_node = current_node->next;
+//    }
+//}
+
+void remove_node (List *list, Node * node) {
+    if (node->previous != NULL) {
+        node->previous->next = node->next;
+    } else {
+        list->tail = node->next;
     }
+    if (node->next != NULL) {
+        node->next->previous = node->previous;
+    } else {
+        list->head = node->previous;
+    }
+    destroy_node(node);
 }
 
 void remove_tail(List *list) {
@@ -118,6 +132,7 @@ Queue *create_queue(int queue_size, char *schedalg) {
     Queue *queue = (Queue *) malloc(sizeof(Queue));
     queue->requests = create_list();
     queue->queue_size = queue_size;
+    queue->running_requests = 0;
     pthread_mutex_init(&queue->mutex, NULL);
     pthread_cond_init(&queue->condition, NULL);
     queue->overload_policy = (char *) malloc(sizeof (char) * strlen(schedalg) + 1);
@@ -145,6 +160,10 @@ RequestInfo *queue_pop(Queue * queue) {
     info->arrival_time = queue->requests->head->info->arrival_time;
     remove_head(queue->requests);
     queue->requests->size--;
+    // incremented by 1 the running_requests number as this request will now
+    // be handled by a thread
+    queue->running_requests++;
+    //
     pthread_cond_signal(&queue->condition);
 
     pthread_mutex_unlock(&queue->mutex);
@@ -156,7 +175,8 @@ void queue_push(Queue * queue , int fd , struct timeval *arrival_time){
 
     pthread_mutex_lock(&queue->mutex);
 
-    if (queue->requests->size > queue->queue_size) {
+    // changed if statement
+    if (queue->requests->size + queue->running_requests >= queue->queue_size) {
         if (!strcmp(queue->overload_policy,"block")) {
             while (queue->requests->size > queue->queue_size) {
                 pthread_cond_wait(&queue->condition, &queue->mutex);
@@ -172,9 +192,38 @@ void queue_push(Queue * queue , int fd , struct timeval *arrival_time){
         }
 
         else if (!strcmp(queue->overload_policy,"dh")) {
-            Close(queue->requests->head->info->fd);
-            remove_head(queue->requests);
-            add_node(queue->requests, fd, arrival_time);
+            if (queue->running_requests != queue->queue_size) {
+                Close(queue->requests->head->info->fd);
+                remove_head(queue->requests);
+                add_node(queue->requests, fd, arrival_time);
+            }
+            else {
+                Close(fd);
+            }
+            pthread_cond_signal(&queue->condition);
+        }
+
+        else if (!strcmp(queue->overload_policy,"random")) {
+            if (queue->running_requests != queue->queue_size) {
+                int request_to_remove;
+                int number_of_requests_to_remove = ceil((double) queue->requests->size * 0.25);
+                Node *current_node;
+                for (int i = 0; i < number_of_requests_to_remove; i++) {
+                    srand(time(NULL));
+                    request_to_remove = rand() % queue->requests->size;
+                    current_node = queue->requests->tail;
+                    for (int j = 0; j < request_to_remove; j++) {
+                        current_node = current_node->next;
+                    }
+                    Close(current_node->info->fd);
+                    remove_node(queue->requests, current_node);
+                    queue->requests->size--;
+                }
+                add_node(queue->requests, fd , arrival_time);
+                queue->requests->size++;
+            } else {
+                Close(fd);
+            }
             pthread_cond_signal(&queue->condition);
         }
     }
