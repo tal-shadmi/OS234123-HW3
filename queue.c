@@ -1,5 +1,13 @@
 #include "queue.h"
 
+static int my_ceil(double num) {
+    int inum = (int)num;
+    if (num == (double)inum) {
+        return inum;
+    }
+    return inum + 1;
+}
+
 /*********************************************
  * RequestInfo implementation
  ********************************************/
@@ -178,17 +186,15 @@ void queue_push(Queue * queue , int fd , struct timeval *arrival_time){
     // changed if statement
     if (queue->requests->size + queue->running_requests >= queue->queue_size) {
         if (!strcmp(queue->overload_policy,"block")) {
-            while (queue->requests->size > queue->queue_size) {
+            while (queue->requests->size + queue->running_requests >= queue->queue_size) {
                 pthread_cond_wait(&queue->condition, &queue->mutex);
             }
             add_node(queue->requests, fd , arrival_time);
             queue->requests->size++;
-            pthread_cond_signal(&queue->condition);
         }
 
         else if (!strcmp(queue->overload_policy,"dt")) {
             Close(fd);
-            pthread_cond_signal(&queue->condition);
         }
 
         else if (!strcmp(queue->overload_policy,"dh")) {
@@ -200,13 +206,12 @@ void queue_push(Queue * queue , int fd , struct timeval *arrival_time){
             else {
                 Close(fd);
             }
-            pthread_cond_signal(&queue->condition);
         }
 
         else if (!strcmp(queue->overload_policy,"random")) {
             if (queue->running_requests != queue->queue_size) {
                 int request_to_remove;
-                int number_of_requests_to_remove = ceil((double) queue->requests->size * 0.25);
+                int number_of_requests_to_remove = my_ceil((double) queue->requests->size * 0.25);
                 Node *current_node;
                 for (int i = 0; i < number_of_requests_to_remove; i++) {
                     srand(time(NULL));
@@ -224,15 +229,13 @@ void queue_push(Queue * queue , int fd , struct timeval *arrival_time){
             } else {
                 Close(fd);
             }
-            pthread_cond_signal(&queue->condition);
         }
     }
     else {
         add_node(queue->requests , fd, arrival_time);
         queue->requests->size++;
-        pthread_cond_signal(&queue->condition);
     }
-
+    pthread_cond_signal(&queue->condition);
     pthread_mutex_unlock(&queue->mutex);
 
 }

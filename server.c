@@ -46,18 +46,13 @@ typedef struct {
 
 void server_respond(ServerInfo *server_info, RequestInfo *request_info) {
     char buf[MAXLINE];
-    sprintf(buf, "Stat-Req-Arrival:: %lu.%06lu\r\n\r\n", (unsigned long) request_info->arrival_time.tv_sec, (unsigned long) request_info->arrival_time.tv_usec);
+    sprintf(buf, "%sStat-Req-Arrival:: %lu.%06lu\r\n\r\n", buf, (unsigned long) request_info->arrival_time.tv_sec, (unsigned long) request_info->arrival_time.tv_usec);
+    sprintf(buf, "%sStat-Req-Dispatch:: %lu.%06lu\r\n\r\n", buf, (unsigned long) request_info->dispatch_time.tv_sec, (unsigned long) request_info->dispatch_time.tv_usec);
+    sprintf(buf, "%sStat-Thread-Id:: %d\r\n\r\n\r\n", buf, server_info->thread_id);
     Rio_writen(request_info->fd, buf, strlen(buf));
-    sprintf(buf, "Stat-Req-Dispatch:: %lu.%06lu\r\n\r\n", (unsigned long) request_info->dispatch_time.tv_sec, (unsigned long) request_info->dispatch_time.tv_usec);
-    Rio_writen(request_info->fd, buf, strlen(buf));
-    sprintf(buf, "Stat-Thread-Id:: %d\r\n\r\n\r\n", server_info->thread_id);
-    Rio_writen(request_info->fd, buf, strlen(buf));
-    sprintf(buf, "Stat-Thread-Count:: %d\r\n\r\n", server_info->thread_pool[server_info->thread_id]->requests_count);
-    Rio_writen(request_info->fd, buf, strlen(buf));
-    sprintf(buf, "Stat-Thread-Static:: %d\r\n\r\n", server_info->thread_pool[server_info->thread_id]->static_requests_count);
-    Rio_writen(request_info->fd, buf, strlen(buf));
-    sprintf(buf, "Stat-Thread-Dynamic:: %d\r\n\r\n", server_info->thread_pool[server_info->thread_id]->dynamic_requests_count);
-    Rio_writen(request_info->fd, buf, strlen(buf));
+    sprintf(buf, "%sStat-Thread-Count:: %d\r\n\r\n", buf, server_info->thread_pool[server_info->thread_id]->requests_count);
+    sprintf(buf, "%sStat-Thread-Static:: %d\r\n\r\n", buf, server_info->thread_pool[server_info->thread_id]->static_requests_count);
+    sprintf(buf, "%sStat-Thread-Dynamic:: %d\r\n\r\n", buf, server_info->thread_pool[server_info->thread_id]->dynamic_requests_count);
     Close(request_info->fd);
 }
 

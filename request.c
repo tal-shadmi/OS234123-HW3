@@ -110,15 +110,16 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs)
    sprintf(buf, "%sServer: OS-HW3 Web Server\r\n", buf);
 
    Rio_writen(fd, buf, strlen(buf));
-
-   if (Fork() == 0) {
+    pid_t son_pid = Fork();
+   if (son_pid == 0) {
       /* Child process */
       Setenv("QUERY_STRING", cgiargs, 1);
       /* When the CGI process writes to stdout, it will instead go to the socket */
       Dup2(fd, STDOUT_FILENO);
       Execve(filename, emptylist, environ);
+   } else {
+       waitpid(son_pid, NULL, 0);
    }
-   Wait(NULL);
 }
 
 
