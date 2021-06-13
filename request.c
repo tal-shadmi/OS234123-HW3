@@ -118,7 +118,7 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs)
       Dup2(fd, STDOUT_FILENO);
       Execve(filename, emptylist, environ);
    } else {
-       waitpid(son_pid, NULL, 0);
+       WaitPid(son_pid, NULL, 0);
    }
 }
 
@@ -172,9 +172,7 @@ void requestHandle(RequestInfo *info)
       return;
    }
    requestReadhdrs(&rio);
-
    is_static = requestParseURI(uri, filename, cgiargs);
-   info->is_static_request = is_static;
    if (stat(filename, &sbuf) < 0) {
       requestError(fd, filename, "404", "Not found", "OS-HW3 Server could not find this file");
       return;
@@ -193,6 +191,7 @@ void requestHandle(RequestInfo *info)
       }
       requestServeDynamic(fd, filename, cgiargs);
    }
+    info->is_static_request = is_static;
 }
 
 

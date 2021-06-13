@@ -101,13 +101,13 @@ int main(int argc, char *argv[])
     t->port = atoi(argv[2]);
     t->filename = strdup(argv[3]);
 
-    pthread_t threads[10];
-    for (int i = 0 ; i < 10 ; i++) {
+    pthread_t threads[100];
+    for (int i = 0 ; i < 100 ; i++) {
         if (pthread_create(&threads[i], NULL, (void *)thread_client_routine,(void *)t )) {
             printf("error");
         }
     }
-    for (int i = 0 ; i < 10 ; i++) {
+    for (int i = 0 ; i < 100 ; i++) {
         if (pthread_join(threads[i], NULL)) {
             printf("error");
         }
