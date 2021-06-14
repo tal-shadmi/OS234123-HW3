@@ -1,13 +1,5 @@
 #include "queue.h"
 
-static int my_ceil(double num) {
-    int inum = (int)num;
-    if (num == (double)inum) {
-        return inum;
-    }
-    return inum + 1;
-}
-
 /*********************************************
  * RequestInfo implementation
  ********************************************/
@@ -211,7 +203,7 @@ void queue_push(Queue * queue , int fd , struct timeval *arrival_time){
         else if (!strcmp(queue->overload_policy,"random")) {
             if (queue->running_requests != queue->queue_size) {
                 int request_to_remove;
-                int number_of_requests_to_remove = my_ceil((double) queue->requests->size * 0.25);
+                int number_of_requests_to_remove = ceil((double) queue->requests->size * 0.25);
                 Node *current_node;
                 for (int i = 0; i < number_of_requests_to_remove; i++) {
                     srand(time(NULL));
