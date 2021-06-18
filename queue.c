@@ -72,20 +72,6 @@ void add_node (List *list , int fd, struct timeval *arrival_time) {
     }
 }
 
-//void remove_node (List *list, int fd, struct timeval *arrival_time) {
-//    Node *current_node = list->head;
-//    while (current_node != NULL) {
-//        if (current_node->info->fd == fd && current_node->info->arrival_time.tv_sec == arrival_time->tv_sec &&
-//                current_node->info->arrival_time.tv_usec == arrival_time->tv_usec) {
-//            current_node->previous->next = current_node->next;
-//            current_node->next->previous = current_node->previous;
-//            destroy_node(current_node);
-//            break;
-//        }
-//        current_node = current_node->next;
-//    }
-//}
-
 void remove_node (List *list, Node * node) {
     if (node->previous != NULL) {
         node->previous->next = node->next;
@@ -160,10 +146,7 @@ RequestInfo *queue_pop(Queue * queue) {
     info->arrival_time = queue->requests->head->info->arrival_time;
     remove_head(queue->requests);
     queue->requests->size--;
-    // incremented by 1 the running_requests number as this request will now
-    // be handled by a thread
     queue->running_requests++;
-    //
     pthread_cond_signal(&queue->condition);
 
     pthread_mutex_unlock(&queue->mutex);
@@ -175,7 +158,6 @@ void queue_push(Queue * queue , int fd , struct timeval *arrival_time){
 
     pthread_mutex_lock(&queue->mutex);
 
-    // changed if statement
     if (queue->requests->size + queue->running_requests >= queue->queue_size) {
         if (!strcmp(queue->overload_policy,"block")) {
             while (queue->requests->size + queue->running_requests >= queue->queue_size) {

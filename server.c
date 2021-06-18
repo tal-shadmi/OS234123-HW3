@@ -3,7 +3,7 @@
 
 #include "segel.h"
 #include "queue.h"
-#include "worker_thread.h"
+#include "request.h"
 
 // 
 // server.c: A very, very simple web server
@@ -14,12 +14,6 @@
 // Repeatedly handles HTTP requests sent to this port number.
 // Most of the work is done within routines written in request.c
 //
-
-typedef struct {
-    Queue *requests_queue;
-    worker_thread **thread_pool;
-    int thread_id;
-} ServerInfo;
 
 // pthread_mutex_t server_respond_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -46,18 +40,6 @@ double Time_GetMiliSeconds() {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 
-/*void server_respond(ServerInfo *server_info, RequestInfo *request_info) {
-    char buf[MAXLINE];
-    sprintf(buf, "%sStat-Req-Arrival:: %lu.%06lu\r\n", buf, (unsigned long) request_info->arrival_time.tv_sec, (unsigned long) request_info->arrival_time.tv_usec);
-    sprintf(buf, "%sStat-Req-Dispatch:: %lu.%06lu\r\n", buf, (unsigned long) request_info->dispatch_time.tv_sec, (unsigned long) request_info->dispatch_time.tv_usec);
-    sprintf(buf, "%sStat-Thread-Id:: %d\r\n", buf, server_info->thread_id);
-    sprintf(buf, "%sStat-Thread-Count:: %d\r\n", buf, server_info->thread_pool[server_info->thread_id]->requests_count);
-    sprintf(buf, "%sStat-Thread-Static:: %d\r\n", buf, server_info->thread_pool[server_info->thread_id]->static_requests_count);
-    sprintf(buf, "%sStat-Thread-Dynamic:: %d\r\n\r\n", buf, server_info->thread_pool[server_info->thread_id]->dynamic_requests_count);
-    Rio_writen(request_info->fd, buf, strlen(buf));
-    Close(request_info->fd);
-}*/
-
 void check_for_requests(ServerInfo *server_info) {
     while (1) {
         RequestInfo *request_info = queue_pop(server_info->requests_queue);
@@ -65,18 +47,8 @@ void check_for_requests(ServerInfo *server_info) {
         gettimeofday(&current_time,NULL);
         request_info->dispatch_time.tv_usec = current_time.tv_usec - request_info->arrival_time.tv_usec;
         request_info->dispatch_time.tv_sec = current_time.tv_sec - request_info->arrival_time.tv_sec;
-        requestHandle(request_info, server_info);
-//        server_info->thread_pool[server_info->thread_id]->requests_count++;
-//        if (request_info->is_static_request != -1) {
-//            request_info->is_static_request ? server_info->thread_pool[server_info->thread_id]->static_requests_count++:
-//            server_info->thread_pool[server_info->thread_id]->dynamic_requests_count++;
-//        }
-//        pthread_mutex_lock(&server_info->requests_queue->mutex);
+        requestHandle(server_info, request_info);
         Close(request_info->fd);
-//        server_info->requests_queue->running_requests--;
-//        server_respond(server_info, request_info);
-//        pthread_cond_signal(&server_info->requests_queue->condition);
-//        pthread_mutex_unlock(&server_info->requests_queue->mutex);
         destroy_info(request_info);
     }
 }
