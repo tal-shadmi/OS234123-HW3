@@ -48,7 +48,6 @@ void *destroy_list(List * list);
 
 void add_node (List *list , int fd, struct timeval *arrival_time);
 
-//void remove_node (List *list, int fd, struct timeval *arrival_time);
 void remove_node (List *list, Node * node);
 
 void remove_tail(List *list);

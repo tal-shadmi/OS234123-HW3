@@ -1,8 +1,9 @@
-#ifndef __REQUEST_H__
+#ifndef __SERVER_C__
+#define __SERVER_C__
 
-#include "segel.h"
 #include "queue.h"
+#include "server.c"
 
-void requestHandle(RequestInfo *info);
+void requestHandle(ServerInfo *server_info, RequestInfo *request_info);
 
 #endif
