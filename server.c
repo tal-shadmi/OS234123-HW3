@@ -50,6 +50,7 @@ void check_for_requests(ServerInfo *server_info) {
         requestHandle(server_info, request_info);
         pthread_mutex_lock(&server_info->requests_queue->mutex);
         server_info->requests_queue->running_requests--;
+        pthread_cond_broadcast(&server_info->requests_queue->condition);
         pthread_mutex_unlock(&server_info->requests_queue->mutex);
         Close(request_info->fd);
         destroy_info(request_info);

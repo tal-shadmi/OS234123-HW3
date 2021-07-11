@@ -80,9 +80,17 @@ typedef struct {
 
 void thread_client_routine(infoToThread *t) {
     int clientfd;
-    for (int j = 0; j < 5; j++) {
+    for (int j = 0; j < 60; j++) {
         clientfd = Open_clientfd(t->host, t->port);
-        clientSend(clientfd, t->filename);
+        if (j % 3 == 0) {
+            clientSend(clientfd, t->filename);
+        }
+        else if (j % 3 == 1) {
+            clientSend(clientfd, "/output.cgi");
+        }
+        else if (j % 3 == 2) {
+            clientSend(clientfd, "/favicon.ico");
+        }
         pthread_mutex_lock(&client_respond_mutex);
         clientPrint(clientfd);
         pthread_mutex_unlock(&client_respond_mutex);
