@@ -16,7 +16,7 @@ typedef struct {
 
 RequestInfo *create_info(int fd, struct timeval *arrival_time);
 
-void destroy_info();
+void destroy_info(RequestInfo *info);
 
 /*********************************************
  * Node declaration

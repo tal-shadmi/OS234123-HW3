@@ -12,26 +12,32 @@ LIBS = -lpthread -lm
 
 .SUFFIXES: .c .o 
 
-#all: server client output.cgi
-#	-mkdir -p public
-#	-cp output.cgi favicon.ico home.html public
-
-#server: server.o request.o segel.o queue.o worker_thread.o
-#	$(CC) $(CFLAGS) -o server server.o request.o segel.o queue.o worker_thread.o $(LIBS)
-
-#client: client.o segel.o
-#	$(CC) $(CFLAGS) -o client client.o segel.o $(LIBS)
-#
-#output.cgi: output.c
-#	$(CC) $(CFLAGS) -o output.cgi output.c
-
-all: server
+all: server client output.cgi
+	-mkdir -p public
+	-cp output.cgi favicon.ico home.html public
 
 server: server.o request.o segel.o queue.o worker_thread.o
 	$(CC) $(CFLAGS) -o server server.o request.o segel.o queue.o worker_thread.o $(LIBS)
+
+client: client.o segel.o
+	$(CC) $(CFLAGS) -o client client.o segel.o $(LIBS)
+
+output.cgi: output.c
+	$(CC) $(CFLAGS) -o output.cgi output.c
 
 .c.o:
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
 	-rm -f $(OBJS) server
+
+#all: server
+#
+#server: server.o request.o segel.o queue.o worker_thread.o
+#	$(CC) $(CFLAGS) -o server server.o request.o segel.o queue.o worker_thread.o $(LIBS)
+#
+#.c.o:
+#	$(CC) $(CFLAGS) -o $@ -c $<
+#
+#clean:
+#	-rm -f $(OBJS) server

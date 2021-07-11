@@ -10,6 +10,7 @@ RequestInfo *create_info(int fd, struct timeval *arrival_time) {
     info->arrival_time.tv_usec = arrival_time->tv_usec;
     info->arrival_time.tv_sec = arrival_time->tv_sec;
     info->is_static_request = -1;
+    return info;
 }
 
 void destroy_info(RequestInfo *info) {
@@ -22,7 +23,7 @@ void destroy_info(RequestInfo *info) {
 
 Node *create_node(int fd, struct timeval *arrival_time) {
     Node *node = (Node *) malloc((sizeof (Node)));
-    if (node == NULL) return NULL; //TODO: error handling
+    if (node == NULL) return NULL;
     node->info = create_info(fd, arrival_time);
     node->next = NULL;
     node->previous = NULL;
@@ -40,7 +41,7 @@ void destroy_node(Node *node) {
 
 List *create_list() {
     List *list = (List *) malloc((sizeof (List)));
-    if (list == NULL) return NULL; //TODO: error handling
+    if (list == NULL) return NULL;
     list->size = 0;
     list->head = NULL;
     list->tail = NULL;

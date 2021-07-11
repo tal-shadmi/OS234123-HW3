@@ -80,14 +80,14 @@ typedef struct {
 
 void thread_client_routine(infoToThread *t) {
     int clientfd;
-    clientfd = Open_clientfd(t->host, t->port);
-
-    clientSend(clientfd, t->filename);
-    pthread_mutex_lock(&client_respond_mutex);
-    clientPrint(clientfd);
-    pthread_mutex_unlock(&client_respond_mutex);
-    Close(clientfd);
-
+    for (int j = 0; j < 5; j++) {
+        clientfd = Open_clientfd(t->host, t->port);
+        clientSend(clientfd, t->filename);
+        pthread_mutex_lock(&client_respond_mutex);
+        clientPrint(clientfd);
+        pthread_mutex_unlock(&client_respond_mutex);
+        Close(clientfd);
+    }
 }
 
 int main(int argc, char *argv[])
@@ -101,16 +101,16 @@ int main(int argc, char *argv[])
     t->port = atoi(argv[2]);
     t->filename = strdup(argv[3]);
 
-    pthread_t threads[100];
-    for (int i = 0 ; i < 100 ; i++) {
-        if (pthread_create(&threads[i], NULL, (void *)thread_client_routine,(void *)t )) {
-            printf("error");
-        }
+    pthread_t threads[20];
+    for (int i = 0 ; i < 20 ; i++) {
+            if (pthread_create(&threads[i], NULL, (void *)thread_client_routine,(void *)t )) {
+                printf("error");
+            }
     }
-    for (int i = 0 ; i < 100 ; i++) {
-        if (pthread_join(threads[i], NULL)) {
-            printf("error");
-        }
+    for (int i = 0 ; i < 20 ; i++) {
+            if (pthread_join(threads[i], NULL)) {
+                printf("error");
+            }
     }
     exit(0);
     /* Open a single connection to the specified host and port */

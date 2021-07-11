@@ -48,6 +48,9 @@ void check_for_requests(ServerInfo *server_info) {
         request_info->dispatch_time.tv_usec = current_time.tv_usec - request_info->arrival_time.tv_usec;
         request_info->dispatch_time.tv_sec = current_time.tv_sec - request_info->arrival_time.tv_sec;
         requestHandle(server_info, request_info);
+        pthread_mutex_lock(&server_info->requests_queue->mutex);
+        server_info->requests_queue->running_requests--;
+        pthread_mutex_unlock(&server_info->requests_queue->mutex);
         Close(request_info->fd);
         destroy_info(request_info);
     }
